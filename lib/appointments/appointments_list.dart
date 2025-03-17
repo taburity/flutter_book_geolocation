@@ -69,7 +69,7 @@ class AppointmentsList extends StatelessWidget {
   /// @param inDate    The date selected.
   /// @param inContext The build context of the parent widget.
   void _showAppointments(DateTime inDate, BuildContext inContext) async {
-    AppointmentsModel model = Provider.of<AppointmentsModel>(inContext);
+    AppointmentsModel model = Provider.of<AppointmentsModel>(inContext, listen: false);
 
     print(
       "## AppointmentsList._showAppointments(): inDate = $inDate (${inDate.year},${inDate.month},${inDate.day})"
