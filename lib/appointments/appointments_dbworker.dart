@@ -1,22 +1,15 @@
 import "package:path/path.dart";
 import "package:sqflite/sqflite.dart";
-import "../utils.dart" as utils;
-import "appointments_model.dart";
+import "../../utils.dart" as utils;
+import "appointments_model_address.dart";
 
 
-/// Classe que provê acesso ao banco de dados para gerenciar compromissos.
 class AppointmentsDBWorker {
 
-  /// Static instance and private constructor, since this is a singleton.
   AppointmentsDBWorker._();
   static final AppointmentsDBWorker db = AppointmentsDBWorker._();
-
-  /// The one and only database instance.
   Database? _db;
 
-  /// Get singleton instance, create if not available yet.
-  ///
-  /// @return The one and only Database instance.
   Future<Database> get database async {
     if (_db == null) {
       _db = await init();
@@ -25,9 +18,6 @@ class AppointmentsDBWorker {
     return _db!;
   }
 
-  /// Initialize database.
-  ///
-  /// @return A Database instance.
   Future<Database> init() async {
     String path = join(utils.docsDir.path, "appointments.db");
     print("## appointments AppointmentsDBWorker.init(): path = $path");
@@ -39,7 +29,8 @@ class AppointmentsDBWorker {
             "title TEXT,"
             "description TEXT,"
             "apptDate TEXT,"
-            "apptTime TEXT"
+            "apptTime TEXT,"
+            "address TEXT"
           ")"
         );
       }
@@ -47,7 +38,6 @@ class AppointmentsDBWorker {
     return db;
   }
 
-  /// Create a Appointment from a Map.
   Appointment appointmentFromMap(Map inMap) {
     print("## appointments AppointmentsDBWorker.appointmentFromMap(): inMap = $inMap");
     Appointment appointment = Appointment(
@@ -55,13 +45,13 @@ class AppointmentsDBWorker {
       title: inMap["title"],
       description: inMap["description"],
       apptDate: inMap["apptDate"],
-      apptTime: inMap["apptTime"]
+      apptTime: inMap["apptTime"],
+      address: inMap["address"]
     );
     print("## appointments AppointmentsDBWorker.appointmentFromMap(): appointment = $appointment");
     return appointment;
   }
 
-  /// Create a Map from a Appointment.
   Map<String, dynamic> appointmentToMap(Appointment inAppointment) {
     print("## appointments AppointmentsDBWorker.appointmentToMap(): inAppointment = $inAppointment");
     Map<String, dynamic> map = Map<String, dynamic>();
@@ -70,13 +60,11 @@ class AppointmentsDBWorker {
     map["description"] = inAppointment.description;
     map["apptDate"] = inAppointment.apptDate;
     map["apptTime"] = inAppointment.apptTime;
+    map["address"] = inAppointment.address;
     print("## appointments AppointmentsDBWorker.appointmentToMap(): map = $map");
     return map;
   }
 
-  /// Create a appointment.
-  ///
-  /// @param inAppointment the Appointment object to create.
   Future create(Appointment inAppointment) async {
     print("## appointments AppointmentsDBWorker.create(): inAppointment = $inAppointment");
     Database db = await database;
@@ -88,21 +76,18 @@ class AppointmentsDBWorker {
 
     // Insert into table.
     return await db.rawInsert(
-      "INSERT INTO appointments (id, title, description, apptDate, apptTime) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO appointments (id, title, description, apptDate, apptTime, address) VALUES (?, ?, ?, ?, ?, ?)",
       [
         id,
         inAppointment.title,
         inAppointment.description,
         inAppointment.apptDate,
-        inAppointment.apptTime
+        inAppointment.apptTime,
+        inAppointment.address
       ]
     );
   }
 
-  /// Get a specific appointment.
-  ///
-  /// @param  inID The ID of the appointment to get.
-  /// @return      The corresponding Appointment object.
   Future<Appointment> get(int inID) async {
     print("## appointments AppointmentsDBWorker.get(): inID = $inID");
 
@@ -112,9 +97,6 @@ class AppointmentsDBWorker {
     return appointmentFromMap(rec.first);
   }
 
-  /// Get all appointments.
-  ///
-  /// @return A List of Appointment objects.
   Future<List> getAll() async {
     Database db = await database;
     var recs = await db.query("appointments");
@@ -123,9 +105,6 @@ class AppointmentsDBWorker {
     return list;
   }
 
-  /// Update a appointment.
-  ///
-  /// @param inAppointment The appointment to update.
   Future update(Appointment inAppointment) async {
     print("## appointments AppointmentsDBWorker.update(): inAppointment = $inAppointment");
     Database db = await database;
@@ -134,9 +113,6 @@ class AppointmentsDBWorker {
     );
   }
 
-  /// Delete a appointment.
-  ///
-  /// @param inID The ID of the appointment to delete.
   Future delete(int inID) async {
     print("## appointments AppointmentsDBWorker.delete(): inID = $inID");
     Database db = await database;

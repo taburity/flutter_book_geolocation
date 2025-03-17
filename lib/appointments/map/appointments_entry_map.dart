@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import '../../utils.dart' as utils;
-import 'appointments_dbworker.dart';
-import 'appointments_model_address.dart';
+import '../appointments_dbworker.dart';
+import '../appointments_model.dart';
 import 'map_screen.dart';
 
 class AppointmentsEntry extends StatelessWidget {
@@ -17,13 +16,11 @@ class AppointmentsEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     print("## AppointmentsEntry.build()");
     return Consumer<AppointmentsModel>(
-
       builder: (context, model, child) {
         if (model.entityBeingEdited != null) {
           _titleEditingController.text = model.entityBeingEdited.title;
           _descriptionEditingController.text = model.entityBeingEdited.description;
         }
-
         return Scaffold(
           bottomNavigationBar: Padding(
             padding: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
@@ -104,13 +101,13 @@ class AppointmentsEntry extends StatelessWidget {
                 ListTile(
                   leading: Icon(Icons.location_on),
                   title: Text("Location"),
-                  subtitle: Text(model.address),
+                  subtitle: Text(model.address.isNotEmpty ? model.address : "Tap to select"),
                   trailing: IconButton(
-                    icon: Icon(Icons.my_location),
+                    icon: Icon(Icons.map),
                     color: Colors.blue,
-                    onPressed: () => _selectLocation(context, model),
+                    onPressed: () => _selectLocation(context),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -156,22 +153,45 @@ class AppointmentsEntry extends StatelessWidget {
     );
   }
 
-  Future _selectLocation(BuildContext inContext, AppointmentsModel inModel) async {
+  /* Essa versão não funciona porque o provider não é global*/
+  /*Future _selectLocation(BuildContext inContext, AppointmentsModel inModel) async {
     bool allowed = await _checkPermission();
-    if(!allowed) return;
+    if (!allowed) return;
 
-    LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
+    final selectedAddress = await Navigator.push(
+      inContext,
+      MaterialPageRoute(
+        builder: (context) => MapScreen(),
+      ),
     );
 
-    Position position = await Geolocator.getCurrentPosition(locationSettings: locationSettings);
-    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-    Placemark place = placemarks.first;
-    String address = "${place.street}, ${place.locality}, ${place.country}";
+    if (selectedAddress != null && selectedAddress is String) {
+      inModel.entityBeingEdited.address = selectedAddress;
+      inModel.setApptAddress(selectedAddress);
+    }
+  }*/
 
-    inModel.entityBeingEdited.address = address;
-    inModel.setApptAddress(address);
+  Future _selectLocation(BuildContext inContext) async {
+    bool allowed = await _checkPermission();
+    if (!allowed) return;
+
+    final selectedAddress = await Navigator.push(
+      inContext,
+      MaterialPageRoute(
+        builder: (context) => ChangeNotifierProvider.value(
+          value: Provider.of<AppointmentsModel>(inContext, listen: false),
+          child: MapScreen(),
+        ),
+      ),
+    );
+
+    if (selectedAddress != null && selectedAddress is String) {
+      final inModel = Provider.of<AppointmentsModel>(inContext, listen: false);
+      inModel.entityBeingEdited.address = selectedAddress;
+      inModel.setApptAddress(selectedAddress);
+    }
   }
+
 
   Future<bool> _checkPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
@@ -183,4 +203,5 @@ class AppointmentsEntry extends StatelessWidget {
     }
     return true;
   }
+
 }

@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:provider/provider.dart';
-import '../utils.dart' as utils;
+import 'package:geolocator/geolocator.dart';
+import '../../utils.dart' as utils;
 import 'appointments_dbworker.dart';
-import 'appointments_model.dart';
+import 'appointments_model_address.dart';
+import 'map_screen.dart';
 
 class AppointmentsEntry extends StatelessWidget {
-
   final TextEditingController _titleEditingController = TextEditingController();
   final TextEditingController _descriptionEditingController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -99,6 +101,16 @@ class AppointmentsEntry extends StatelessWidget {
                     onPressed: () => _selectTime(context, model),
                   ),
                 ),
+                ListTile(
+                  leading: Icon(Icons.location_on),
+                  title: Text("Location"),
+                  subtitle: Text(model.address),
+                  trailing: IconButton(
+                    icon: Icon(Icons.my_location),
+                    color: Colors.blue,
+                    onPressed: () => _selectLocation(context, model),
+                  ),
+                )
               ],
             ),
           ),
@@ -122,28 +134,19 @@ class AppointmentsEntry extends StatelessWidget {
   }
 
   void _save(BuildContext inContext, AppointmentsModel inModel) async {
-    //O compromisso não será salvo se as entradas do formulário não forem validadas
     if (!_formKey.currentState!.validate()) return;
 
-    //Um novo compromisso foi criado
     if (inModel.entityBeingEdited.id == null) {
       await AppointmentsDBWorker.db.create(inModel.entityBeingEdited);
-    //Um compromisso existente está sendo atualizado
     } else {
       await AppointmentsDBWorker.db.update(inModel.entityBeingEdited);
     }
 
-    //Atualizar a listagem de compromissos
     inModel.loadData("appointments", AppointmentsDBWorker.db);
-
-    //Limpar os controladores
     _titleEditingController.clear();
     _descriptionEditingController.clear();
-
-    // Retornar para a listagem de compromissos
     inModel.setStackIndex(0);
 
-    // Informar o usuário que o novo compromisso foi salvo
     ScaffoldMessenger.of(inContext).showSnackBar(
       SnackBar(
         backgroundColor: Colors.green,
@@ -151,5 +154,33 @@ class AppointmentsEntry extends StatelessWidget {
         content: Text("Appointment saved"),
       ),
     );
+  }
+
+  Future _selectLocation(BuildContext inContext, AppointmentsModel inModel) async {
+    bool allowed = await _checkPermission();
+    if(!allowed) return;
+
+    LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+    );
+
+    Position position = await Geolocator.getCurrentPosition(locationSettings: locationSettings);
+    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+    Placemark place = placemarks.first;
+    String address = "${place.street}, ${place.locality}, ${place.country}";
+
+    inModel.entityBeingEdited.address = address;
+    inModel.setApptAddress(address);
+  }
+
+  Future<bool> _checkPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return false;
+      }
+    }
+    return true;
   }
 }
