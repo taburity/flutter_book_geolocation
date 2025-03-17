@@ -1,4 +1,4 @@
-import "../../base_model.dart";
+import "../base_model.dart";
 
 
 ///Uma classe que representa um compromisso.

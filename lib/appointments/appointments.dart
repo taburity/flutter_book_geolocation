@@ -12,7 +12,7 @@ class Appointments extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<AppointmentsModel>(
         create: (context) {
-          AppointmentsModel model = AppointmentsModel(apptTime: '');
+          AppointmentsModel model = AppointmentsModel(apptTime: '', address: '');
           model.loadData("appointments", AppointmentsDBWorker.db);
           return model;
         },

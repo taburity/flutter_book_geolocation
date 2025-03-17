@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../utils.dart' as utils;
+import '../utils.dart' as utils;
 import 'appointments_dbworker.dart';
-import 'appointments_model_address.dart';
-import 'map_screen.dart';
+import 'appointments_model.dart';
 
 class AppointmentsEntry extends StatelessWidget {
   final TextEditingController _titleEditingController = TextEditingController();
